@@ -1,0 +1,7 @@
+- Intergrate with REST API
+- Validator & language server
+- Console
+- Print result
+- TSC
+- Bluetooth printer
+- USB printer
