@@ -24,6 +24,7 @@ const App: FC = () => {
   const [dataString, setDataString] = usePersistState<string>('data', '');
   const [escPaperWidth, setEscPaperWidth] = usePersistState('escPaperWidth', 80);
   const [printerAddress, setPrinterAddress] = usePersistState<string>('printerAddress', '');
+  const [encoding, setEncoding] = usePersistState<string>('encoding', 'GBK');
 
   const [dom, setDom] = useState();
   const [showSettings, setShowSettings] = useState<boolean>(false);
@@ -90,7 +91,7 @@ const App: FC = () => {
       return;
     }
     const copyDom = JSON.parse(JSON.stringify(dom));
-    const cmd = await buildCommand(copyDom, { type: 'esc', encoding: 'cp437', paperSize: [80] });
+    const cmd = await buildCommand(copyDom, { type: 'esc', encoding, paperSize: [80] });
     const buffer = cmd.getBuffer().flush();
     window.__POS_PRINT__.print(printer, buffer);
   };
@@ -243,6 +244,26 @@ const App: FC = () => {
                 </Select>
               )}
             />
+          </FormGroup>
+          <FormGroup label="Encoding">
+            <Select
+              filterable={false}
+              items={['GBK', 'BIG5', 'CP850', 'CP437']}
+              itemRenderer={item => (
+                <MenuItem
+                  active={item === encoding}
+                  key={item}
+                  text={item}
+                  onClick={() => setEncoding(item)}
+                />
+              )}
+              onItemSelect={() => {}}
+            >
+              <Button
+                rightIcon="caret-down"
+                text={encoding}
+              />
+            </Select>
           </FormGroup>
         </div>
         <div className={Classes.DIALOG_FOOTER}>
