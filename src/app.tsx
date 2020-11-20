@@ -91,7 +91,7 @@ const App: FC = () => {
       return;
     }
     const copyDom = JSON.parse(JSON.stringify(dom));
-    const cmd = await buildCommand(copyDom, { type: 'esc', encoding, paperSize: [80] });
+    const cmd = await buildCommand(copyDom, { type: 'esc', encoding, paperSize: [escPaperWidth] });
     const buffer = cmd.getBuffer().flush();
     window.__POS_PRINT__.print(printer, buffer);
   };
