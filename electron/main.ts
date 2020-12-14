@@ -6,6 +6,7 @@ import installExtension, {
 } from 'electron-devtools-installer';
 import * as windowState from 'electron-window-state';
 import { Socket } from 'net';
+import * as Usb from 'usb';
 
 let win: BrowserWindow | null = null;
 
@@ -80,9 +81,7 @@ app.on('activate', () => {
   }
 });
 
-ipcMain.handle('print', async (_, printer: IPrinter, buffer: Buffer) => {
-  console.log(printer, buffer);
-  const { ip, port } = printer;
+const writeLan = (ip: string, port: number, buffer: Buffer) => {
   const socket = new Socket();
   socket.on('connect', () => console.log('connect'));
   socket.on('error', () => console.log('error'));
@@ -95,6 +94,44 @@ ipcMain.handle('print', async (_, printer: IPrinter, buffer: Buffer) => {
       });
     });
   });
+};
+
+const writeUsb = (buffer: Buffer) => {
+  const devices = Usb.getDeviceList();
+  let interfaceNumber: number | undefined;
+  const device = devices.find(x =>
+    x.configDescriptor.interfaces.some(
+      y => y.some(z => {
+        if (z.bInterfaceClass === Usb.LIBUSB_CLASS_PRINTER) {
+          interfaceNumber = z.bInterfaceNumber;
+          return true;
+        } else {
+          return false;
+        }
+      }),
+    ),
+  );
+  if (!device || interfaceNumber == null) {
+    throw new Error('No usb printer found.');
+  }
+  device.open();
+  const iface = device.interface(interfaceNumber);
+  iface.claim();
+  const outEndpoint = iface.endpoints.find(x => x.direction === 'out') as Usb.OutEndpoint;
+  outEndpoint.transferType = Usb.LIBUSB_TRANSFER_TYPE_BULK;
+  outEndpoint.transfer(buffer, (err) => {
+    console.error(err);
+  });
+};
+
+ipcMain.handle('print', async (_, printer: TPrinter, buffer: Buffer) => {
+  console.log(printer, buffer);
+  if (printer.type === 'LAN') {
+    const { ip, port } = printer;
+    writeLan(ip, port || 9100, buffer);
+  } else if (printer.type === 'USB') {
+    writeUsb(buffer);
+  }
 });
 
 ipcMain.handle('openDevTools', () => {

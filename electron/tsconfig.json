@@ -9,6 +9,9 @@
     "noEmitOnError": true,
     "typeRoots": [
       "node_modules/@types"
+    ],
+    "types": [
+      "../typings"
     ]
   }
 }

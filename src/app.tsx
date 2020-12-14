@@ -1,4 +1,4 @@
-import React, { FC, useEffect, useRef, useState } from 'react';
+import React, { FC, Fragment, useEffect, useRef, useState } from 'react';
 import { Alignment, Button, ButtonGroup, Classes, Dialog, FormGroup, Icon, InputGroup, Intent, MenuItem, Navbar, Tab, Tabs, Tag, Toaster, Tooltip } from '@blueprintjs/core';
 import { Select } from "@blueprintjs/select";
 import Split from 'react-split';
@@ -35,14 +35,17 @@ const App: FC = () => {
   const [styleString, setStyleString] = usePersistState<string>('style', '');
   const [dataString, setDataString] = usePersistState<string>('data', '');
   const [escPaperWidth, setEscPaperWidth] = usePersistState('escPaperWidth', 80);
+  const [tscPaperWidth, setTscPaperWidth] = usePersistState('tscPaperWidth', [40, 30]);
+  const [printerType, setPrinterType] = usePersistState<string>('printerType', 'LAN');
   const [printerAddress, setPrinterAddress] = usePersistState<string>('printerAddress', '');
   const [encoding, setEncoding] = usePersistState<string>('encoding', 'GBK');
 
   const [dom, setDom] = useState();
+  const [isTsc, setIsTsc] = useState<boolean>();
   const [hydrateError, setHydrateError] = useState<HyrdateError>();
   const [showSettings, setShowSettings] = useState<boolean>(false);
   const [printerAddressInvalid, setPrinterAddressInvalid] = useState<boolean>(false);
-  const [printer, setPrinter] = useState<IPrinter>();
+  const [printer, setPrinter] = useState<TPrinter>();
 
   const togglePanel = (key: string) => {
     const index = visiblePanels.indexOf(key);
@@ -84,6 +87,11 @@ const App: FC = () => {
           const dom = hydrate(template, style, data, {});
           setDom(dom);
           console.debug(JSON.stringify(dom));
+          if (dom && dom.attributes && dom.attributes.isa && dom.attributes.isa.toLowerCase() === 'tsc') {
+            setIsTsc(true);
+          } else {
+            setIsTsc(false);
+          }
         } catch (e) {
           throw new HyrdateError('TEMPLATE', e)
         }
@@ -106,24 +114,30 @@ const App: FC = () => {
       return;
     }
     const copyDom = JSON.parse(JSON.stringify(dom));
-    const cmd = await buildCommand(copyDom, { type: 'esc', encoding, paperSize: [escPaperWidth] });
+    const type = isTsc ? 'tsc' : 'esc'
+    const paperSize = isTsc ? tscPaperWidth : [escPaperWidth]
+    const cmd = await buildCommand(copyDom, { type, encoding, paperSize });
     const buffer = cmd.getBuffer().flush();
     window.__POS_PRINT__.print(printer, buffer);
   };
 
-  const getPrinter = (): IPrinter | undefined => {
-    const [ip, portString] = printerAddress.split(':');
-    if (!ipRegex({ exact: true }).test(ip)) {
-      return;
-    }
-    if (typeof portString !== 'undefined') {
-      const port = Number(portString);
-      if (Number.isNaN(port) || port > 65535 || port < 1) {
+  const getPrinter = (): TPrinter | undefined => {
+    if (printerType === 'USB') {
+      return { type: 'USB' }
+    } else if (printerType === 'LAN') {
+      const [ip, portString] = printerAddress.split(':');
+      if (!ipRegex({ exact: true }).test(ip)) {
         return;
       }
-      return { type: 'LAN', ip, port };
-    } else {
-      return { type: 'LAN', ip };
+      if (typeof portString !== 'undefined') {
+        const port = Number(portString);
+        if (Number.isNaN(port) || port > 65535 || port < 1) {
+          return;
+        }
+        return { type: 'LAN', ip, port };
+      } else {
+        return { type: 'LAN', ip };
+      }
     }
   }
 
@@ -143,6 +157,10 @@ const App: FC = () => {
     setShowSettings(false);
   };
 
+  const previewerWidth = isTsc ? `${tscPaperWidth[0] * 3.5}px` : `${escPaperWidth * 3.5}px`
+  const previewerHeight = isTsc ? `${tscPaperWidth[1] * 2.75}px` : undefined
+  const previewerSize = { width: previewerWidth, height: previewerHeight }
+
   return (
     <>
       <Toaster ref={toaster} maxToasts={1} />
@@ -159,15 +177,17 @@ const App: FC = () => {
             ))}
           </ButtonGroup>
         </Navbar.Group>
-        <Navbar.Group align={Alignment.RIGHT}>
-          <Tag minimal onDoubleClick={showConsole}>
-            {`Version: ${window.__POS_PRINT__.version}`}
-          </Tag>
-          <Navbar.Divider />
-          <Button minimal icon="print" text="Print" onClick={print} />
-          <Navbar.Divider />
-          <Button minimal icon="cog" onClick={() => setShowSettings(true)} />
-        </Navbar.Group>
+        {window.__POS_PRINT__ && (
+          <Navbar.Group align={Alignment.RIGHT}>
+            <Tag minimal onDoubleClick={showConsole}>
+              {`Version: ${window.__POS_PRINT__.version}`}
+            </Tag>
+            <Navbar.Divider />
+            <Button minimal icon="print" text="Print" onClick={print} />
+            <Navbar.Divider />
+            <Button minimal icon="cog" onClick={() => setShowSettings(true)} />
+          </Navbar.Group>
+        )}
       </Navbar>
       <main className="main">
         <Split
@@ -176,43 +196,53 @@ const App: FC = () => {
           gutterSize={8}
           snapOffset={0}
         >
-          {visiblePanels.includes('template') && (
-            <Editor
-              key="template"
-              title="Template"
-              lang="javascript"
-              text={template}
-              onChange={setTemplate}
-            />
-          )}
-          {visiblePanels.includes('style') && (
-            <Editor
-              key="style"
-              title="Style"
-              lang="json"
-              text={styleString}
-              onChange={setStyleString}
-            />
-          )}
-          {visiblePanels.includes('data') && (
-            <Editor
-              key="data"
-              title="Data"
-              lang="json"
-              text={dataString}
-              onChange={setDataString}
-            />
-          )}
+          {visiblePanels.map(x => (
+            <Fragment key={x}>
+              {x === 'template' && (
+                <Editor
+                  key="template"
+                  title="Template"
+                  lang="javascript"
+                  text={template}
+                  onChange={setTemplate}
+                />
+              )}
+              {x === 'style' && (
+                <Editor
+                  key="style"
+                  title="Style"
+                  lang="json"
+                  text={styleString}
+                  onChange={setStyleString}
+                />
+              )}
+              {x === 'data' && (
+                <Editor
+                  key="data"
+                  title="Data"
+                  lang="json"
+                  text={dataString}
+                  onChange={setDataString}
+                />
+              )}
+            </Fragment>
+          ))}
         </Split>
         <div className={'sidebar' + (hydrateError ? ' has-error' : '')}>
           {dom && (
             <>
-              <Tabs className="paper-size-selector" selectedTabId={escPaperWidth} onChange={x => setEscPaperWidth(x as number)}>
-                <Tab id={80} title="80 mm" />
-                <Tab id={72} title="72 mm" />
-                <Tab id={58} title="58 mm" />
-              </Tabs>
-              <div className="preview" style={{ width: `${escPaperWidth * 3.5}px` }}>
+              {isTsc ? (
+                <Tabs className="paper-size-selector" selectedTabId={1} onChange={x => setTscPaperWidth([40, 30])}>
+                  <Tab id={1} title="40 x 30 mm" />
+                </Tabs>
+              ) : (
+                <Tabs className="paper-size-selector" selectedTabId={escPaperWidth} onChange={x => setEscPaperWidth(x as number)}>
+                  <Tab id={80} title="80 mm" />
+                  <Tab id={72} title="72 mm" />
+                  <Tab id={58} title="58 mm" />
+                </Tabs>
+              )}
+              <div className="preview" style={previewerSize}>
                 <Previewer dom={dom} />
                 {hydrateError && (
                   <Tooltip
@@ -246,6 +276,7 @@ const App: FC = () => {
               autoFocus
               id="printer-input"
               value={printerAddress}
+              disabled={printerType !== 'LAN'}
               onChange={(e: any) => {
                 setPrinterAddressInvalid(false);
                 setPrinterAddress(e.target.value);
@@ -258,10 +289,10 @@ const App: FC = () => {
                   items={['LAN', 'Bluetooth', 'USB']}
                   itemRenderer={item => (
                     <MenuItem
-                      active={item === 'LAN'}
-                      disabled={item !== 'LAN'}
+                      active={item === printerType}
                       key={item}
                       text={item}
+                      onClick={() => setPrinterType(item)}
                     />
                   )}
                   onItemSelect={() => {}}
@@ -269,7 +300,7 @@ const App: FC = () => {
                   <Button
                     minimal
                     rightIcon="caret-down"
-                    text="LAN"
+                    text={printerType}
                   />
                 </Select>
               )}

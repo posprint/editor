@@ -6,7 +6,7 @@ contextBridge.exposeInMainWorld('__POS_PRINT__', {
     const { version } = require(path.join(__dirname, '..', '..', 'package.json'));
     return version
   },
-  print(printer: IPrinter, buffer: Buffer) {
+  print(printer: TPrinter, buffer: Buffer) {
     return ipcRenderer.invoke('print', printer, buffer);
   },
   openDevTools() {
