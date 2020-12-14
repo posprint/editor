@@ -42,8 +42,8 @@
     "@blueprintjs/core": "^3.35.0",
     "@blueprintjs/select": "^3.14.3",
     "@monaco-editor/react": "^3.6.3",
-    "@posprint/command-builder": "0.0.6",
-    "@posprint/previewer-react": "0.0.5",
+    "@posprint/command-builder": "0.0.10",
+    "@posprint/previewer-react": "0.0.6",
     "@posprint/template": "0.0.3",
     "@types/electron-devtools-installer": "^2.2.0",
     "@types/node": "^12.19.3",
@@ -54,7 +54,6 @@
     "dayjs": "^1.9.5",
     "electron-devtools-installer": "^3.1.1",
     "electron-is-dev": "^1.2.0",
-    "electron-rebuild": "^2.3.4",
     "electron-reload": "^1.5.0",
     "electron-window-state": "^5.0.3",
     "fontsource-jetbrains-mono": "^3.0.5",
@@ -76,6 +75,7 @@
   "devDependencies": {
     "@types/usb": "^1.5.2",
     "electron": "^10.1.5",
-    "electron-builder": "^22.9.1"
+    "electron-builder": "^22.9.1",
+    "electron-rebuild": "^2.3.4"
   }
 }
