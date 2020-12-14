@@ -148,7 +148,7 @@ const App: FC = () => {
     setShowSettings(false);
   };
 
-  const previewerWidth = isTsc ? `${tscPaperWidth[0] * 3.5}px` : `${escPaperWidth * 3.5}px`
+  const previewerWidth = isTsc ? `${tscPaperWidth[0] * 3.6}px` : `${escPaperWidth * 3.5}px`
   const previewerHeight = isTsc ? `${tscPaperWidth[1] * 2.75}px` : undefined
   const previewerSize = { width: previewerWidth, height: previewerHeight }
 
