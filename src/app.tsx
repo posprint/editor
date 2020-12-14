@@ -9,12 +9,6 @@ import { buildCommand } from '@posprint/command-builder/index';
 import { usePersistState } from './utils';
 import Editor from './editor';
 
-const allEditorPanels = [
-  { key: 'template', title: 'Template' },
-  { key: 'style', title: 'Style' },
-  { key: 'data', title: 'Data' },
-];
-
 class HyrdateError extends Error {
   private _error: Error
   private _type: 'TEMPLATE' | 'STYLE' | 'DATA'
@@ -30,7 +24,7 @@ class HyrdateError extends Error {
 const App: FC = () => {
   const toaster = useRef<Toaster>(null);
 
-  const [visiblePanels, setVisibilePanels] = usePersistState<string[]>('visiblePanels', ['template']);
+  const [panelVisible, setPanelVisible] = usePersistState<Record<string, boolean>>('panelVisible', { template: true });
   const [template, setTemplate] = usePersistState<string>('template', '');
   const [styleString, setStyleString] = usePersistState<string>('style', '');
   const [dataString, setDataString] = usePersistState<string>('data', '');
@@ -48,17 +42,14 @@ const App: FC = () => {
   const [printer, setPrinter] = useState<TPrinter>();
 
   const togglePanel = (key: string) => {
-    const index = visiblePanels.indexOf(key);
-    if (index > -1) {
-      if (visiblePanels.length > 1) {
-        setVisibilePanels([
-          ...visiblePanels.slice(0, index),
-          ...visiblePanels.slice(index + 1),
-        ]);
-      }
-    } else {
-      setVisibilePanels([...visiblePanels, key]);
+    const newValue = {
+      ...panelVisible,
+      [key]: !panelVisible[key]
     }
+    if (!editorPanels.some(x => newValue[x.key])) {
+      newValue.template = true
+    }
+    setPanelVisible(newValue)
   };
 
   const showConsole = () => {
@@ -161,17 +152,25 @@ const App: FC = () => {
   const previewerHeight = isTsc ? `${tscPaperWidth[1] * 2.75}px` : undefined
   const previewerSize = { width: previewerWidth, height: previewerHeight }
 
+  const editorPanels = [
+    { key: 'template', title: 'Template', lang: 'javascript', content: template, onContentChange: setTemplate },
+    { key: 'style', title: 'Style', lang: 'json', content: styleString, onContentChange: setStyleString },
+    { key: 'data', title: 'Data', lang: 'json', content: dataString, onContentChange: setDataString },
+  ];
+
+  const visiblePanels = editorPanels.filter(x => panelVisible[x.key])
+
   return (
     <>
       <Toaster ref={toaster} maxToasts={1} />
       <Navbar>
         <Navbar.Group align={Alignment.LEFT}>
           <ButtonGroup>
-            {allEditorPanels.map(x => (
+            {editorPanels.map(x => (
               <Button
                 key={x.key}
                 text={x.title}
-                active={visiblePanels.includes(x.key)}
+                active={panelVisible[x.key]}
                 onClick={() => togglePanel(x.key)}
               />
             ))}
@@ -192,40 +191,18 @@ const App: FC = () => {
       <main className="main">
         <Split
           className="editor-container"
-          key={visiblePanels.join()}
+          key={visiblePanels.map(x => x.key).join()}
           gutterSize={8}
           snapOffset={0}
         >
           {visiblePanels.map(x => (
-            <Fragment key={x}>
-              {x === 'template' && (
-                <Editor
-                  key="template"
-                  title="Template"
-                  lang="javascript"
-                  text={template}
-                  onChange={setTemplate}
-                />
-              )}
-              {x === 'style' && (
-                <Editor
-                  key="style"
-                  title="Style"
-                  lang="json"
-                  text={styleString}
-                  onChange={setStyleString}
-                />
-              )}
-              {x === 'data' && (
-                <Editor
-                  key="data"
-                  title="Data"
-                  lang="json"
-                  text={dataString}
-                  onChange={setDataString}
-                />
-              )}
-            </Fragment>
+            <Editor
+              key={x.key}
+              title={x.title}
+              lang={x.lang}
+              text={x.content}
+              onChange={x.onContentChange}
+            />
           ))}
         </Split>
         <div className={'sidebar' + (hydrateError ? ' has-error' : '')}>
