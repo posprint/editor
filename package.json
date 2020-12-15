@@ -42,7 +42,7 @@
     "@blueprintjs/core": "^3.35.0",
     "@blueprintjs/select": "^3.14.3",
     "@monaco-editor/react": "^3.6.3",
-    "@posprint/command-builder": "0.0.10",
+    "@posprint/command-builder": "0.0.11",
     "@posprint/previewer-react": "0.0.6",
     "@posprint/template": "0.0.3",
     "@types/electron-devtools-installer": "^2.2.0",
