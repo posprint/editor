@@ -92,7 +92,7 @@ const App: FC = () => {
       }
     }, 500);
     return () => clearTimeout(timer);
-  }, [template, styleString, dataString]);
+  }, [template, styleString, dataString, escPaperWidth, tscPaperWidth]);
 
   const print = async () => {
     if (!printer) {
