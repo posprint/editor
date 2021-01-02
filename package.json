@@ -1,6 +1,6 @@
 {
   "name": "@posprint/editor",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "private": true,
   "homepage": ".",
   "main": "build/electron/main.js",
@@ -18,7 +18,7 @@
     "files": [
       "build/**/*"
     ],
-    "compression": "store",
+    "compression": "maximum",
     "directories": {
       "buildResources": "assets"
     }
