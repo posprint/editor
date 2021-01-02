@@ -2,7 +2,7 @@ import React, { FC, useEffect, useRef } from 'react';
 import { Colors, Label } from '@blueprintjs/core';
 import MonacoEditor from '@monaco-editor/react';
 import { withResizeDetector } from 'react-resize-detector';
-import 'fontsource-jetbrains-mono';
+import '@fontsource/jetbrains-mono';
 
 interface IProps {
   width: number;
