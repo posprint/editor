@@ -75,7 +75,8 @@ const App: FC = () => {
         }
 
         try {
-          const dom = hydrate(template, style, data, {});
+          const paperSize = isTsc ? tscPaperWidth : escPaperWidth
+          const dom = hydrate(template, style, data, { paperSize, encoding });
           setDom(dom);
           console.debug(JSON.stringify(dom));
           if (dom && dom.attributes && dom.attributes.isa && dom.attributes.isa.toLowerCase() === 'tsc') {
@@ -92,7 +93,7 @@ const App: FC = () => {
       }
     }, 500);
     return () => clearTimeout(timer);
-  }, [template, styleString, dataString, escPaperWidth, tscPaperWidth]);
+  }, [template, styleString, dataString, isTsc, escPaperWidth, tscPaperWidth, encoding]);
 
   const print = async () => {
     if (!printer) {
