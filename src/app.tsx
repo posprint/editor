@@ -1,13 +1,12 @@
-import React, { FC, Fragment, useEffect, useRef, useState } from 'react';
-import { Alignment, Button, ButtonGroup, Classes, Dialog, FormGroup, Icon, InputGroup, Intent, MenuItem, Navbar, Tab, Tabs, Tag, Toaster, Tooltip } from '@blueprintjs/core';
-import { Select } from "@blueprintjs/select";
+import { FC, useEffect, useRef, useState } from 'react';
+import { Alignment, Button, ButtonGroup, Icon, Intent, Navbar, Tab, Tabs, Tag, Toaster, Tooltip } from '@blueprintjs/core';
 import Split from 'react-split';
-import ipRegex from 'ip-regex';
 import { hydrate } from '@posprint/template';
 import Previewer from '@posprint/previewer-react';
 import { buildCommand } from '@posprint/command-builder/index';
 import { usePersistState } from './utils';
 import Editor from './editor';
+import Settings, { ISettings } from './settings'
 
 class HyrdateError extends Error {
   private _error: Error
@@ -21,6 +20,10 @@ class HyrdateError extends Error {
   }
 }
 
+const defaultSettings: ISettings = {
+  encoding: 'GBK',
+}
+
 const App: FC = () => {
   const toaster = useRef<Toaster>(null);
 
@@ -30,16 +33,12 @@ const App: FC = () => {
   const [dataString, setDataString] = usePersistState<string>('data', '');
   const [escPaperWidth, setEscPaperWidth] = usePersistState('escPaperWidth', 80);
   const [tscPaperWidth, setTscPaperWidth] = usePersistState('tscPaperWidth', [40, 30]);
-  const [printerType, setPrinterType] = usePersistState<string>('printerType', 'LAN');
-  const [printerAddress, setPrinterAddress] = usePersistState<string>('printerAddress', '');
-  const [encoding, setEncoding] = usePersistState<string>('encoding', 'GBK');
 
   const [dom, setDom] = useState();
   const [isTsc, setIsTsc] = useState<boolean>();
   const [hydrateError, setHydrateError] = useState<HyrdateError>();
   const [showSettings, setShowSettings] = useState<boolean>(false);
-  const [printerAddressInvalid, setPrinterAddressInvalid] = useState<boolean>(false);
-  const [printer, setPrinter] = useState<TPrinter>();
+  const [settings, setSettings] = usePersistState<ISettings>('settings', defaultSettings)
 
   const togglePanel = (key: string) => {
     const newValue = {
@@ -76,7 +75,7 @@ const App: FC = () => {
 
         try {
           const paperSize = isTsc ? tscPaperWidth : escPaperWidth
-          const dom = hydrate(template, style, data, { paperSize, encoding });
+          const dom = hydrate(template, style, data, { paperSize, encoding: settings.encoding });
           setDom(dom);
           console.debug(JSON.stringify(dom));
           if (dom && dom.attributes && dom.attributes.isa && dom.attributes.isa.toLowerCase() === 'tsc') {
@@ -93,10 +92,10 @@ const App: FC = () => {
       }
     }, 500);
     return () => clearTimeout(timer);
-  }, [template, styleString, dataString, isTsc, escPaperWidth, tscPaperWidth, encoding]);
+  }, [template, styleString, dataString, isTsc, escPaperWidth, tscPaperWidth, settings.encoding]);
 
   const print = async () => {
-    if (!printer) {
+    if (!settings.printer) {
       toaster.current && toaster.current.show({
         icon: 'cog',
         intent: Intent.WARNING,
@@ -108,45 +107,9 @@ const App: FC = () => {
     const copyDom = JSON.parse(JSON.stringify(dom));
     const type = isTsc ? 'tsc' : 'esc'
     const paperSize = isTsc ? tscPaperWidth : [escPaperWidth]
-    const cmd = await buildCommand(copyDom, { type, encoding, paperSize });
+    const cmd = await buildCommand(copyDom, { type, encoding: settings.encoding, paperSize });
     const buffer = cmd.getBuffer().flush();
-    window.__POS_PRINT__.print(printer, buffer);
-  };
-
-  const getPrinter = (): TPrinter | undefined => {
-    if (printerType === 'USB') {
-      return { type: 'USB' }
-    } else if (printerType === 'LAN') {
-      const [ip, portString] = printerAddress.split(':');
-      if (!ipRegex({ exact: true }).test(ip)) {
-        return;
-      }
-      if (typeof portString !== 'undefined') {
-        const port = Number(portString);
-        if (Number.isNaN(port) || port > 65535 || port < 1) {
-          return;
-        }
-        return { type: 'LAN', ip, port };
-      } else {
-        return { type: 'LAN', ip };
-      }
-    }
-  }
-
-  const saveSettings = () => {
-    const printer = getPrinter();
-    if (!printer) {
-      setPrinterAddressInvalid(true);
-    } else {
-      setPrinterAddressInvalid(false);
-      setPrinter(printer);
-      setShowSettings(false);
-    }
-  };
-
-  const closeSettings = () => {
-    setPrinterAddressInvalid(false);
-    setShowSettings(false);
+    window.__POS_PRINT__.print(settings.printer, buffer);
   };
 
   const previewerWidth = isTsc ? `${tscPaperWidth[0] * 3.6}px` : `${escPaperWidth * 3.5}px`
@@ -242,75 +205,15 @@ const App: FC = () => {
           )}
         </div>
       </main>
-      <Dialog
-        icon="cog"
-        title="Settings"
-        isOpen={showSettings}
-        onClose={closeSettings}
-      >
-        <div className={Classes.DIALOG_BODY}>
-          <FormGroup label="Printer" labelFor="printer-input">
-            <InputGroup
-              autoFocus
-              id="printer-input"
-              value={printerAddress}
-              disabled={printerType !== 'LAN'}
-              onChange={(e: any) => {
-                setPrinterAddressInvalid(false);
-                setPrinterAddress(e.target.value);
-              }}
-              intent={printerAddressInvalid ? Intent.DANGER : undefined}
-              placeholder="IP Address, e.g. 192.168.1.100 or 192.168.1.100:9100"
-              leftElement={(
-                <Select
-                  filterable={false}
-                  items={['LAN', 'Bluetooth', 'USB']}
-                  itemRenderer={item => (
-                    <MenuItem
-                      active={item === printerType}
-                      key={item}
-                      text={item}
-                      onClick={() => setPrinterType(item)}
-                    />
-                  )}
-                  onItemSelect={() => {}}
-                >
-                  <Button
-                    minimal
-                    rightIcon="caret-down"
-                    text={printerType}
-                  />
-                </Select>
-              )}
-            />
-          </FormGroup>
-          <FormGroup label="Encoding">
-            <Select
-              filterable={false}
-              items={['GBK', 'BIG5', 'CP850', 'CP437']}
-              itemRenderer={item => (
-                <MenuItem
-                  active={item === encoding}
-                  key={item}
-                  text={item}
-                  onClick={() => setEncoding(item)}
-                />
-              )}
-              onItemSelect={() => {}}
-            >
-              <Button
-                rightIcon="caret-down"
-                text={encoding}
-              />
-            </Select>
-          </FormGroup>
-        </div>
-        <div className={Classes.DIALOG_FOOTER}>
-          <div className={Classes.DIALOG_FOOTER_ACTIONS}>
-            <Button intent={Intent.PRIMARY} onClick={saveSettings}>Save</Button>
-          </div>
-        </div>
-      </Dialog>
+      <Settings
+        visible={showSettings}
+        value={settings}
+        onCancel={() => setShowSettings(false)}
+        onConfirm={value => {
+          setSettings(value)
+          setShowSettings(false)
+        }}
+      />
     </>
   );
 };

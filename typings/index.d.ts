@@ -1,3 +1,6 @@
+type TPrinterType = 'LAN' | 'USB' | 'BLE'
+type TEncoding = 'GBK' | 'BIG5' | 'CP850' | 'CP437'
+
 type TPrinter = {
   type: 'LAN';
   ip: string;
@@ -6,4 +9,6 @@ type TPrinter = {
   type: 'USB';
   vid?: string;
   pid?: string;
+} | {
+  type: 'BLE';
 }

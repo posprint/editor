@@ -1,4 +1,4 @@
-import React, { FC, useEffect, useRef } from 'react';
+import { FC, useEffect, useRef } from 'react';
 import { Colors, Label } from '@blueprintjs/core';
 import MonacoEditor from '@monaco-editor/react';
 import { withResizeDetector } from 'react-resize-detector';

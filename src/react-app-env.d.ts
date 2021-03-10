@@ -8,9 +8,3 @@ declare module '@posprint/command-builder/index';
 interface Window {
   __POS_PRINT__: any;
 }
-
-interface ILogItem {
-  date: Date;
-  level: 'error' | 'warn' | 'info' | 'debug';
-  message: string;
-}
