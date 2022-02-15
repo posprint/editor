@@ -26,7 +26,6 @@ function createWindow() {
       nodeIntegration: false,
       nodeIntegrationInWorker: false,
       nodeIntegrationInSubFrames: false,
-      enableRemoteModule: false,
       preload: path.join(__dirname, 'runtime.js'),
     },
   });
