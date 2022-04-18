@@ -112,8 +112,8 @@ const App: FC = () => {
     window.__POS_PRINT__.print(settings.printer, buffer);
   };
 
-  const previewerWidth = isTsc ? `${tscPaperWidth[0] * 3.6}px` : `${escPaperWidth * 3.5}px`
-  const previewerHeight = isTsc ? `${tscPaperWidth[1] * 2.75}px` : undefined
+  const previewerWidth = isTsc ? `${tscPaperWidth[0] * 3.8}px` : `${escPaperWidth * 3.5}px`
+  const previewerHeight = isTsc ? `${tscPaperWidth[1] * 3.8}px` : undefined
   const previewerSize = { width: previewerWidth, height: previewerHeight }
 
   const editorPanels = [
