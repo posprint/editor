@@ -1,6 +1,6 @@
 {
   "name": "@posprint/editor",
-  "version": "0.0.13",
+  "version": "0.0.14",
   "private": true,
   "homepage": ".",
   "main": "build/electron/main.js",
@@ -70,7 +70,7 @@
     "@types/usb": "^1.5.2",
     "concurrently": "^5.3.0",
     "electron": "^17.0.1",
-    "electron-builder": "^22.9.1",
+    "electron-builder": "23.0.2",
     "electron-rebuild": "^2.3.4",
     "electron-reload": "^1.5.0",
     "fontsource-jetbrains-mono": "^4.0.0",
