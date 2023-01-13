@@ -32,7 +32,7 @@ const App: FC = () => {
   const [styleString, setStyleString] = usePersistState<string>('style', '');
   const [dataString, setDataString] = usePersistState<string>('data', '');
   const [escPaperWidth, setEscPaperWidth] = usePersistState('escPaperWidth', 80);
-  const [tscPaperWidth, setTscPaperWidth] = usePersistState('tscPaperWidth', [40, 30]);
+  const [tscPaperWidth, setTscPaperWidth] = usePersistState('tscPaperWidth', [40, 60]);
 
   const [dom, setDom] = useState();
   const [isTsc, setIsTsc] = useState<boolean>();
@@ -77,7 +77,8 @@ const App: FC = () => {
           const paperSize = isTsc ? tscPaperWidth : escPaperWidth
           const dom = hydrate(template, style, data, { paperSize, encoding: settings.encoding });
           setDom(dom);
-          console.debug(JSON.stringify(dom));
+          
+          console.log(JSON.stringify(dom));
           if (dom && dom.attributes && dom.attributes.isa && dom.attributes.isa.toLowerCase() === 'tsc') {
             setIsTsc(true);
           } else {
@@ -114,7 +115,7 @@ const App: FC = () => {
 
   const previewerWidth = isTsc ? `${tscPaperWidth[0] * 3.8}px` : `${escPaperWidth * 3.5}px`
   const previewerHeight = isTsc ? `${tscPaperWidth[1] * 3.8}px` : undefined
-  const previewerSize = { width: previewerWidth, height: previewerHeight }
+  const previewerSize = { width: previewerWidth, height: previewerHeight, padding: '2px' }
 
   const editorPanels = [
     { key: 'template', title: 'Template', lang: 'javascript', content: template, onContentChange: setTemplate },
@@ -173,8 +174,12 @@ const App: FC = () => {
           {dom && (
             <>
               {isTsc ? (
-                <Tabs className="paper-size-selector" selectedTabId={1} onChange={x => setTscPaperWidth([40, 30])}>
-                  <Tab id={1} title="40 x 30 mm" />
+                <Tabs className="paper-size-selector" selectedTabId={tscPaperWidth.join('x')} onChange={x => {
+                  const array = (x as string).split('x') as unknown as number[]
+                  setTscPaperWidth(array)
+                }}>
+                  <Tab id='40x60' title="40 x 60 mm" />
+                  <Tab id='40x30' title="40 x 30 mm" />
                 </Tabs>
               ) : (
                 <Tabs className="paper-size-selector" selectedTabId={escPaperWidth} onChange={x => setEscPaperWidth(x as number)}>
