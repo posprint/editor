@@ -1,6 +1,6 @@
 {
   "name": "@posprint/editor",
-  "version": "0.0.15",
+  "version": "0.0.19",
   "private": true,
   "homepage": ".",
   "main": "build/electron/main.js",
@@ -59,8 +59,8 @@
     "@blueprintjs/core": "^3.36.0",
     "@blueprintjs/select": "^3.15.0",
     "@monaco-editor/react": "^3.7.4",
-    "@posprint/command-builder": "0.0.38",
-    "@posprint/previewer-react": "0.0.26",
+    "@posprint/command-builder": "0.0.46",
+    "@posprint/previewer-react": "0.0.34",
     "@posprint/template": "0.0.4",
     "@types/electron-devtools-installer": "^2.2.0",
     "@types/node": "^12.19.11",
